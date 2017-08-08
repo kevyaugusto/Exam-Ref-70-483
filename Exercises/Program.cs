@@ -17,8 +17,16 @@ namespace Exercises
             //Listing4();
             //Listing5();
             //Listing6();
-            Listing7();
-            
+            //Listing7();
+            //Listing8();
+            //Listing9();
+            //Listing10();
+            //Listing11();
+            //Listing12();
+            //Listing13();
+            //Listing14();
+            Listing15();
+
             //Console.WriteLine("Press any button to continue...");
             //Console.ReadLine();
         }
@@ -34,9 +42,9 @@ namespace Exercises
                 System.Threading.Thread.Sleep(0); //warn windows that this thread is finished, switching to another thread
             }
 
-            thread.Join();           
+            thread.Join();
         }
-        
+
         /// <summary>
         /// Background thread running
         /// </summary>
@@ -88,7 +96,7 @@ namespace Exercises
             thread.Join();
         }
 
-                
+
         [ThreadStatic]
         public static int _fieldListing5;
         /// <summary>
@@ -161,6 +169,216 @@ namespace Exercises
             });
 
             Console.ReadLine();
+        }
+
+        /// <summary>
+        /// Starting a new Task
+        /// </summary>
+        private static void Listing8()
+        {
+            var task = Task.Run(() =>
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    Console.WriteLine("*");
+                }
+            });
+
+            task.Wait();
+        }
+
+        /// <summary>
+        /// Using a Task that returns a value
+        /// </summary>
+        private static void Listing9()
+        {
+            var task = Task<int>.Run(() =>
+            {
+                return int.MaxValue;
+            });
+
+            Console.WriteLine(task.Result);
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Adding a continuation to the task
+        /// </summary>
+        private static void Listing10()
+        {
+            var task = Task<int>.Run(() =>
+            {
+                return int.MaxValue;
+            }).ContinueWith((i) =>
+            {
+                return i.Result / 10000;
+            });
+
+            Console.WriteLine(task.Result);
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Scheduling different continuation tasks
+        /// </summary>
+        private static void Listing11()
+        {
+            var task = Task<int>.Run(() =>
+            {
+                return int.MaxValue;
+            });
+
+            task.ContinueWith((i) =>
+            {
+                Console.WriteLine("Canceled");
+            }, TaskContinuationOptions.OnlyOnCanceled);
+
+            task.ContinueWith((i) =>
+            {
+                Console.WriteLine("Faulted");
+            }, TaskContinuationOptions.OnlyOnFaulted);
+
+            var completedTask = task.ContinueWith((i) =>
+            {
+                Console.WriteLine("Completed");
+            }, TaskContinuationOptions.OnlyOnRanToCompletion);
+
+            completedTask.Wait();
+
+            Console.WriteLine(task.Result);
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Attaching child tasks a parent task
+        /// </summary>
+        private static void Listing12()
+        {
+            var parent = Task.Run(() =>
+            {
+                var results = new int[3];
+
+                new Task(() => results[0] = 0, TaskCreationOptions.AttachedToParent).Start();
+                new Task(() => results[1] = 5, TaskCreationOptions.AttachedToParent).Start();
+                new Task(() => results[2] = 10, TaskCreationOptions.AttachedToParent).Start();
+
+                return results;
+            });
+
+            var finalTask = parent.ContinueWith(parentTask =>
+            {
+                foreach (int i in parentTask.Result)
+                {
+                    Console.WriteLine(i);
+                }
+            });
+
+            finalTask.Wait();
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Using a TaskFactory
+        /// </summary>
+        private static void Listing13()
+        {
+            var parent = Task.Run(() =>
+            {
+                var results = new int[3];
+
+                var taskFactory = new TaskFactory(TaskCreationOptions.AttachedToParent, TaskContinuationOptions.ExecuteSynchronously);
+
+                taskFactory.StartNew(() => results[0] = 0);
+                taskFactory.StartNew(() => results[1] = 5);
+                taskFactory.StartNew(() => results[2] = 10);
+
+                return results;
+            });
+
+            var finalTask = parent.ContinueWith(parentTask =>
+            {
+                foreach (int i in parentTask.Result)
+                {
+                    Console.WriteLine(i);
+                }
+            });
+
+            finalTask.Wait();
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Using Task.WaitAll finish.
+        /// All tasks are executed simultaneously and takes 1s instead of 3s
+        /// </summary>
+        private static void Listing14()
+        {
+            var tasks = new Task[3];
+
+            tasks[0] = Task.Run(() =>
+            {
+                Thread.Sleep(1000);
+                Console.WriteLine(1);
+                return 1;
+            });
+
+            tasks[1] = Task.Run(() =>
+            {
+                Thread.Sleep(1000);
+                Console.WriteLine(2);
+                return 2;
+            });
+
+            tasks[2] = Task.Run(() =>
+            {
+                Thread.Sleep(1000);
+                Console.WriteLine(3);
+                return 3;
+            });
+
+            Task.WaitAll(tasks);
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Using Task.WaitAny finishes.
+        /// </summary>
+        private static void Listing15()
+        {
+            var tasks = new Task<int>[3];
+
+            tasks[0] = Task.Run(() =>
+            {
+                Thread.Sleep(2000);
+                return 1;
+            });
+
+            tasks[1] = Task.Run(() =>
+            {
+                Thread.Sleep(1000);
+                return 2;
+            });
+
+            tasks[2] = Task.Run(() =>
+            {
+                Thread.Sleep(3000);
+                return 3;
+            });
+
+            while (tasks.Length > 0)
+            {
+                var i = Task.WaitAny(tasks);
+                var completedTask = tasks[i];
+
+                Console.WriteLine(completedTask.Result);
+
+                var temp = tasks.ToList();
+                temp.RemoveAt(i);
+                tasks = temp.ToArray();
+
+            }
+
+            Console.ReadKey();
         }
     }
 }
