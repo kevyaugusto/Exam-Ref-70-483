@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -25,7 +26,9 @@ namespace Exercises
             //Listing12();
             //Listing13();
             //Listing14();
-            Listing15();
+            //Listing15();
+            //Listing16();
+            Listing17();
 
             //Console.WriteLine("Press any button to continue...");
             //Console.ReadLine();
@@ -378,6 +381,53 @@ namespace Exercises
 
             }
 
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Using Parallel.For and Parallel.ForEach
+        /// </summary>
+        private static void Listing16()
+        {
+            var stopWatch = new Stopwatch();
+            stopWatch.Start();
+            Parallel.For(0, 10, (i) =>
+            {
+                Thread.Sleep(500);
+            });
+
+            Console.WriteLine("Total execution Parallel.For: {0} ms", stopWatch.ElapsedMilliseconds);
+
+            stopWatch.Restart();
+
+            var numbers = Enumerable.Range(0, 10);
+            Parallel.ForEach(numbers, (i) =>
+            {
+                Thread.Sleep(500);
+            });
+
+            Console.WriteLine("Total execution Parallel.ForEach: {0} ms", stopWatch.ElapsedMilliseconds);
+
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Using Parallel.Break
+        /// </summary>
+        private static void Listing17()
+        {
+            ParallelLoopResult loopResult = Parallel.For(0, 1000, (int i, ParallelLoopState loopState) =>
+            {
+                if (i == 500)
+                {
+                    Console.WriteLine("Breaking state");
+                    loopState.Break();
+                }
+                return;
+            });
+
+            Console.WriteLine(loopResult.IsCompleted);
+            Console.WriteLine(loopResult.LowestBreakIteration);
             Console.ReadKey();
         }
     }
