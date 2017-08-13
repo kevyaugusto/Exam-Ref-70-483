@@ -28,7 +28,15 @@ namespace Exercises
             //Listing14();
             //Listing15();
             //Listing16();
-            Listing17();
+            //Listing17();
+            //Listing18();
+            //Listing19();
+            //Listing22();
+            //Listing23();
+            //Listing24();
+            //Listing25();
+            //Listing26();
+            Listing27();
 
             //Console.WriteLine("Press any button to continue...");
             //Console.ReadLine();
@@ -429,6 +437,183 @@ namespace Exercises
             Console.WriteLine(loopResult.IsCompleted);
             Console.WriteLine(loopResult.LowestBreakIteration);
             Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Async and Await
+        /// </summary>
+        private static void Listing18()
+        {
+            var result = DownloadContent().Result;
+
+            Console.WriteLine(result);
+
+            Console.ReadKey();
+        }
+
+        private static async Task<string> DownloadContent()
+        {
+            using (var httpClient = new System.Net.Http.HttpClient())
+            {
+                var result = await httpClient.GetStringAsync("http://www.microsoft.com");
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Scalability versus responsiveness
+        /// </summary>
+        private static void Listing19()
+        {
+            var millisecondsTimeout = 10000;
+            var sw = Stopwatch.StartNew();
+
+            var result = SleepAsyncA(millisecondsTimeout);
+            Console.WriteLine("Time to finish SleepAsyncA in milliseconds: {0}", sw.ElapsedMilliseconds);
+
+            sw.Restart();
+            var result2 = SleepAsyncB(millisecondsTimeout);
+
+            Console.WriteLine("Time to finish SleepAsyncB in milliseconds: {0}", sw.ElapsedMilliseconds);
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// This method uses a thread from the ThreadPool while sleeping
+        /// </summary>
+        /// <param name="millisecondsTimeout"></param>
+        /// <returns></returns>
+        private static Task SleepAsyncA(int millisecondsTimeout)
+        {
+            return Task.Run(() => Thread.Sleep(millisecondsTimeout));
+        }
+
+        /// <summary>
+        /// This method does not occupy a thread while waiting for the timer to run giving SCALABILITY
+        /// </summary>
+        /// <param name="millisecondsTimeout"></param>
+        /// <returns></returns>
+        private static Task SleepAsyncB(int millisecondsTimeout)
+        {
+            TaskCompletionSource<bool> taskCompSour = null;
+
+            var timer = new Timer(delegate { taskCompSour.SetResult(true); }, null, -1, -1);
+
+            taskCompSour = new TaskCompletionSource<bool>(timer);
+            timer.Change(millisecondsTimeout, -1);
+
+            return taskCompSour.Task;
+        }
+
+        /// <summary>
+        /// Using AsParallel
+        /// </summary>
+        private static void Listing22()
+        {
+            var numbers = Enumerable.Range(0, 1000000);
+
+            var parallelResult = numbers.AsParallel().Where(n => n % 2 == 0).ToArray();
+
+            Console.WriteLine("Finished");
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Unordered parallel query
+        /// </summary>
+        private static void Listing23()
+        {
+            var numbers = Enumerable.Range(0, 20);
+
+            var parallelResult = numbers.AsParallel().Where(n => n % 2 == 0).ToArray();
+
+            foreach (var number in parallelResult)
+            {
+                Console.WriteLine(number);
+            }
+
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Ordered parallel query
+        /// </summary>
+        private static void Listing24()
+        {
+            var numbers = Enumerable.Range(0, 20);
+
+            var parallelResult = numbers.AsParallel().AsOrdered()
+                .Where(n => n % 2 == 0).ToArray();
+
+            foreach (var number in parallelResult)
+            {
+                Console.WriteLine(number);
+            }
+
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Making a parallel query sequencial
+        /// </summary>
+        private static void Listing25()
+        {
+            var numbers = Enumerable.Range(0, 20);
+
+            var parallelResult = numbers.AsParallel().AsOrdered()
+                .Where(n => n % 2 == 0).AsSequential();
+
+            foreach (var number in parallelResult.Take(5))
+            {
+                Console.WriteLine(number);
+            }
+
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Using ForAll method to iterate in a parallel way
+        /// </summary>
+        private static void Listing26()
+        {
+            var numbers = Enumerable.Range(0, 20);
+
+            var parallelResult = numbers.AsParallel()
+                .Where(n => n % 2 == 0);
+
+            parallelResult.ForAll(number => Console.WriteLine(number));
+
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Catching Aggregate Exception
+        /// </summary>
+        private static void Listing27()
+        {
+            var numbers = Enumerable.Range(0, 20);
+
+            try
+            {
+                var parallelResult = numbers.AsParallel()
+                    .Where(n => IsEven(n));
+
+                parallelResult.ForAll(number => Console.WriteLine(number));
+            }
+            catch (AggregateException ae)
+            {
+                Console.WriteLine("There were {0} exceptions", ae.InnerExceptions.Count);
+            }
+
+            Console.ReadKey();
+        }
+
+        private static bool IsEven(int number)
+        {
+            if (number % 10 == 0)
+                throw new ArgumentException("forced exception");
+
+            return number % 2 == 0;
         }
     }
 }
